@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="A simple, accessible countdown to Spencer's birthday with a celebratory screen on the day." />
+  <title>Birthday Countdown</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: white;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      overflow: hidden;
+    }
+
+    #countdown {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: black;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .count-row {
+      display: grid;
+      grid-template-columns: auto auto;
+      justify-content: center;
+      column-gap: 12px;
+      align-items: center;
+    }
+
+    .count-number {
+      font-weight: bold;
+      font-size: 2.5rem;
+      text-align: right;
+    }
+
+    .count-label {
+      text-align: left;
+      font-size: 2rem;
+    }
+
+    @media (max-width: 600px) {
+      #countdown {
+        font-size: 1.5rem;
+      }
+
+      .count-number {
+        font-size: 2rem;
+      }
+
+      .count-label {
+        font-size: 1.5rem;
+      }
+    }
+
+    /* Respect users who prefer reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    #birthday {
+      font-size: 3rem;
+      font-weight: bold;
+      animation: colorChange 6s infinite alternate;
+      display: none;
+      text-align: center;
+      z-index: 1;
+    }
+
+    @keyframes colorChange {
+      0% {
+        color: #ff00aa;
+      }
+
+      33% {
+        color: #00aaff;
+      }
+
+      66% {
+        color: #ff9900;
+      }
+
+      100% {
+        color: #00cc66;
+      }
+    }
+
+    .star {
+      position: fixed;
+      top: -50px;
+      color: gold;
+      font-size: 10px;
+      animation: fall linear forwards;
+      pointer-events: none;
+      opacity: 0.9;
+      z-index: 0;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app" role="main">
+    <div id="countdown" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="birthday" role="heading" aria-level="1">Happy Birthday!</div>
+  </main>
+
+  <script>
+    const TEST_MODE = true; // toggle true to force birthday screen
+    const BIRTHDAY_MONTH = 10; // November (0-based)
+    const BIRTHDAY_DAY = 2;
+    const BIRTH_YEAR_START = 2024;
+
+    // Time constants (ms) for clarity (no functional change)
+    const MS_IN_SECOND = 1000;
+    const MS_IN_MINUTE = MS_IN_SECOND * 60;
+    const MS_IN_HOUR = MS_IN_MINUTE * 60;
+    const MS_IN_DAY = MS_IN_HOUR * 24;
+
+    // Respect users who prefer reduced motion
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const countdownEl = document.getElementById("countdown");
+    const birthdayEl = document.getElementById("birthday");
+
+    function getOrdinalSuffix(n) {
+      const j = n % 10, k = n % 100;
+      if (j === 1 && k !== 11) return "st";
+      if (j === 2 && k !== 12) return "nd";
+      if (j === 3 && k !== 13) return "rd";
+      return "th";
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      let target = new Date(now.getFullYear(), BIRTHDAY_MONTH, BIRTHDAY_DAY);
+      if (now > new Date(now.getFullYear(), BIRTHDAY_MONTH, BIRTHDAY_DAY + 1)) {
+        target = new Date(now.getFullYear() + 1, BIRTHDAY_MONTH, BIRTHDAY_DAY);
+      }
+
+      const diff = target - now;
+      const days = Math.floor(diff / MS_IN_DAY);
+      const hours = Math.floor((diff / MS_IN_HOUR) % 24);
+      const minutes = Math.floor((diff / MS_IN_MINUTE) % 60);
+      const seconds = Math.floor((diff / MS_IN_SECOND) % 60);
+
+      countdownEl.innerHTML = `
+        <div class="count-row"><div class="count-number">${days}</div><div class="count-label">days</div></div>
+        <div class="count-row"><div class="count-number">${hours}</div><div class="count-label">hours</div></div>
+        <div class="count-row"><div class="count-number">${minutes}</div><div class="count-label">minutes</div></div>
+        <div class="count-row"><div class="count-number">${seconds}</div><div class="count-label">seconds</div></div>
+        <div>until Spencer's birthday...</div>
+      `;
+    }
+
+    function spawnStar() {
+      const star = document.createElement("div");
+      star.className = "star";
+      star.textContent = "★";
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.top = -Math.random() * 100 + "px";
+      star.style.fontSize = Math.random() * 20 + 10 + "px";
+      star.style.animationDuration = 5 + Math.random() * 5 + "s";
+      document.body.appendChild(star);
+      setTimeout(() => star.remove(), 11000);
+    }
+
+    function startStars() {
+      if (prefersReducedMotion) return;
+      setInterval(spawnStar, 250);
+    }
+
+    function showBirthdayScreen() {
+      countdownEl.style.display = "none";
+      const now = new Date();
+      const age = now.getFullYear() - BIRTH_YEAR_START;
+      const suffix = getOrdinalSuffix(age);
+      birthdayEl.textContent = `Happy ${age}${suffix} Birthday, Spencer!`;
+      birthdayEl.style.display = "block";
+      startStars();
+    }
+
+    function showCountdown() {
+      countdownEl.style.display = "flex";
+      birthdayEl.style.display = "none";
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
+    function init() {
+      const now = new Date();
+      const isBirthday = (now.getMonth() === BIRTHDAY_MONTH && now.getDate() === BIRTHDAY_DAY);
+      if (TEST_MODE || isBirthday) {
+        showBirthdayScreen();
+      } else {
+        showCountdown();
+      }
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
